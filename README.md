@@ -18,7 +18,7 @@ A simple menu-based interface allows users to:
 - Display the tree contents in different traversal orders.
 - Find the minimum value in any dimension.
 
-This project serves as a practical demonstration of KD-Tree functionality and can be extended for tasks such as nearest neighbor search, range queries, and spatial partitioning in 3D applications.
+This project serves as a practical demonstration of KD-Tree functionality and can be used for tasks such as nearest neighbor search, range queries, and spatial partitioning in 3D applications.
 KD Trees are widely used in computer graphics, machine learning, and spatial databases where multidimensional data needs to be processed efficiently.
 ### Team Members
 - 1.Parikshit V
