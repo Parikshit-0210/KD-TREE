@@ -1,7 +1,12 @@
 #include<bits/stdc++.h>
+#include <iostream>
+#include <cmath>
+#include <limits>
+#include<algorithm>
 using namespace std;
 
 const int k = 2;
+const int MAX_POINTS = 100; // Maximum number of points for range search
 
 // A structure to represent node of kd tree
 struct Node
@@ -199,6 +204,93 @@ Node* deleteNode(Node *root, int point[])
     // Pass depth as 0
     return deleteNodeRec(root, point, 0);
 }
+bool isInRange(int point[], int low[], int high[]) {
+    for (int i = 0; i < k; i++) {
+        if (point[i] < low[i] || point[i] > high[i])
+            return false;
+    }
+    return true;
+}
+
+// Recursive function for range search
+void rangeSearchRec(Node* root, int low[], int high[], int result[][k], int& count, unsigned depth) {
+    if (root == NULL)
+        return;
+
+    // Check if current node's point is in range
+    if (isInRange(root->point, low, high)) {
+        for (int i = 0; i < k; i++) {
+            result[count][i] = root->point[i]; // Store the point in the result array
+        }
+        count++; // Increment the count of found points
+    }
+
+    unsigned cd = depth % k;
+
+    // Check left subtree
+    if (low[cd] < root->point[cd]) {
+        rangeSearchRec(root->left, low, high, result, count, depth + 1);
+    }
+
+    // Check right subtree
+    if (high[cd] > root->point[cd]) {
+        rangeSearchRec(root->right, low, high, result, count, depth + 1);
+    }
+}
+
+// Function to perform range search in KD tree
+void rangeSearch(Node* root, int low[], int high[], int result[][k], int& count) {
+    count = 0; // Initialize count to zero
+    rangeSearchRec(root, low, high, result, count, 0);
+}
+
+// Function to calculate squared distance between two points
+double squaredDistance(int point1[], int point2[]) {
+    double dist = 0.0;
+    for (int i = 0; i < k; i++) {
+        dist += pow(point1[i] - point2[i], 2);
+    }
+    return dist;
+}
+
+// Nearest neighbor search recursive function
+void nearestNeighborRec(Node* root, int target[], Node*& bestNode,
+                        double& bestDistSq, unsigned depth) {
+
+    if (root == NULL)
+        return;
+
+    double distSq = squaredDistance(root->point, target);
+
+    // Update best node and distance if current node is closer
+    if (distSq < bestDistSq) {
+        bestDistSq = distSq;
+        bestNode = root;
+    }
+
+    unsigned cd = depth % k;
+
+    // Determine which side of the tree to search first
+    Node *nextBranch = target[cd] < root->point[cd] ? root->left : root->right;
+    Node *otherBranch = target[cd] < root->point[cd] ? root->right : root->left;
+
+    nearestNeighborRec(nextBranch, target, bestNode, bestDistSq, depth + 1);
+
+    // Check if we need to explore the other branch
+    if ((target[cd] - root->point[cd]) * (target[cd] - root->point[cd]) < bestDistSq) {
+        nearestNeighborRec(otherBranch, target, bestNode, bestDistSq, depth + 1);
+    }
+}
+
+// Function to perform nearest neighbor search in KD tree
+Node* nearestNeighbor(Node* root, int target[]) {
+    Node* bestNode = NULL;
+    double bestDistSq = 10000000000;
+
+    nearestNeighborRec(root, target, bestNode, bestDistSq, 0);
+
+    return bestNode;
+}
 
 // Utility function to display points in KD tree using inorder traversal
 void displayInorder(Node* root)
@@ -268,11 +360,13 @@ int main()
         cout << "1. Insert a point\n";
         cout << "2. Search for a point\n";
         cout << "3. Delete a point\n";
-        cout << "4. Display points (Inorder)\n";
-        cout << "5. Display points (Preorder)\n";
-        cout << "6. Display points (Postorder)\n";
-        cout << "7. Find minimum of a dimension\n";
-        cout << "8. Exit\n";
+        cout << "4. Range Search\n";
+        cout << "5. Nearest Neighbor Search\n";
+        cout << "6. Display points (Inorder)\n";
+        cout << "7. Display points (Preorder)\n";
+        cout << "8. Display points (Postorder)\n";
+        cout << "9. Find minimum of a dimension\n";
+        cout << "10.Exit\n";
         cout << "Enter your choice: ";
         cin >> choice;
 
@@ -306,22 +400,62 @@ int main()
                 cout << "Point deleted successfully!\n";
                 break;
             }
-            case 4: {
+            case 4: { // Range Search
+                 int low[k], high[k];
+                 cout << "Enter lower bound coordinates: ";
+                 for (int i = 0; i < k; ++i) cin >> low[i];
+                 cout << "Enter upper bound coordinates: ";
+                 for (int i = 0; i < k; ++i) cin >> high[i];
+
+                 int result[MAX_POINTS][k], count;
+                 rangeSearch(root , low , high , result , count);
+
+                 cout << "Points in range [" << low[0] << ", " << high[0] << "] x ["
+                      << low[1] << ", " << high[1] << "]:" << endl;
+
+                 for (int i = 0; i < count; ++i) {
+                     cout << "(" << result[i][0] << ", " << result[i][1] << ")" << endl;
+                 }
+                 break;
+             }
+             case 5: { // Nearest Neighbor Search
+                 int target[k];
+                 cout << "Enter coordinates of the target point: ";
+                 for (int i = 0; i < k; ++i) cin >> target[i];
+
+                 Node* nearestNode = nearestNeighbor(root , target);
+
+                 if(nearestNode != NULL) {
+                     cout << "Nearest neighbor to ("
+                          << target[0] << ", "
+                          << target[1] << ") is ("
+                          << nearestNode->point[0]
+                          << ", "
+                          << nearestNode->point[1]
+                          << ")"
+                          << endl;
+                 } else {
+                     cout << "No points in the KD Tree."
+                          << endl;
+                 }
+                 break;
+             }
+            case 6: {
                 cout << "Points in the KD tree (Inorder):\n";
                 displayInorder(root);
                 break;
             }
-            case 5: {
+            case 7: {
                 cout << "Points in the KD tree (Preorder):\n";
                 displayPreorder(root);
                 break;
             }
-            case 6: {
+            case 8: {
                 cout << "Points in the KD tree (Postorder):\n";
                 displayPostorder(root);
                 break;
             }
-            case 7: {
+            case 9: {
                 int dim;
                 cout << "Enter dimension to find minimum: ";
                 cin >> dim;
@@ -336,7 +470,7 @@ int main()
                 }
                 break;
             }
-            case 8: {
+            case 10: {
                 cout << "Exiting...\n";
                 break;
             }
@@ -345,7 +479,7 @@ int main()
                 break;
             }
         }
-    } while (choice != 8);
+    } while (choice != 10);
 
     return 0;
 }
